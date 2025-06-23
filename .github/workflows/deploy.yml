@@ -1,4 +1,4 @@
-name: 🚀 Auto Deploy on Push
+name: 🚀 Auto Deploy
 
 on:
   push:
@@ -20,11 +20,15 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy App to Server
+      - name: Deploy App
         run: |
           ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
-          cd ${{ secrets.APP_DIR }}
-          git pull origin main
-          npm install       # or pip install / etc.
-          pm2 restart all   # or systemctl restart app
+            cd ${{ secrets.APP_DIR }}
+            git pull origin main
+            npm install
+            pm2 restart all
           EOF
+
+      - name: Health Check
+        run: |
+          curl --fail http://${{ secrets.SSH_HOST }}:3000/health || exit 1
