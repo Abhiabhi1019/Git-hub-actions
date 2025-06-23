@@ -10,25 +10,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: ✅ Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup SSH
+      - name: 🔐 Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
 
-      - name: Deploy App
+      - name: 🚀 Deploy App
         run: |
-          ssh -i ~/.ssh/id_ed25519 ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << EOF
+          ssh -i ~/.ssh/id_ed25519 -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
             cd ${{ secrets.APP_DIR }}
             git pull origin main
-            npm install
-            pm2 restart all
+            npm install --omit=dev
+            pm2 restart all || pm2 start npm --name app -- start
           EOF
 
-      - name: Health Check
+      - name: 🩺 Health Check
         run: |
           curl --fail http://${{ secrets.SSH_HOST }}:3000/health || exit 1
