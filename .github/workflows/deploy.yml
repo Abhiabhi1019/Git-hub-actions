@@ -32,3 +32,4 @@ jobs:
       - name: Health Check
         run: |
           curl --fail http://${{ secrets.SSH_HOST }}:3000/health || exit 1
+
